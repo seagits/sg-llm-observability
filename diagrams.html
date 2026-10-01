@@ -1,0 +1,180 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; background: #f9f9f7; font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .fig { width: 1400px; padding: 36px 40px 40px; background: #fcfcfb; margin-bottom: 40px; box-sizing: border-box; }
+  h2 { margin: 0 0 4px; font-size: 26px; color: #0b0b0b; }
+  .sub { margin: 0 0 22px; font-size: 15px; color: #52514e; }
+  svg text { font-family: inherit; }
+  .box { fill: #fff; stroke: #c3c2b7; stroke-width: 1.5; }
+  .aws { fill: #fff7ef; stroke: #eb6834; stroke-width: 1.5; }
+  .store { fill: #eef5fd; stroke: #2a78d6; stroke-width: 1.5; }
+  .duck { fill: #fff8e0; stroke: #eda100; stroke-width: 2; }
+  .out { fill: #eaf8f2; stroke: #1baf7a; stroke-width: 1.5; }
+  .t { font-size: 16px; font-weight: 600; fill: #0b0b0b; }
+  .s { font-size: 12.5px; fill: #52514e; }
+  .m { font-size: 12px; fill: #52514e; font-family: ui-monospace, Menlo, monospace; }
+  .lane { font-size: 12px; font-weight: 700; fill: #898781; letter-spacing: .08em; }
+  .arr { stroke: #52514e; stroke-width: 1.6; fill: none; marker-end: url(#a); }
+  .dash { stroke-dasharray: 5 4; }
+  .lbl { font-size: 12px; fill: #52514e; }
+</style>
+
+<div class="fig" id="arch">
+  <h2>LLM analytics on AWS with DuckDB</h2>
+  <p class="sub">Bedrock and the gateway write logs to S3. One DuckDB job turns them into Parquet. Everything else is a query.</p>
+  <svg width="1320" height="560" viewBox="0 0 1320 560">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#52514e"/></marker></defs>
+
+    <text class="lane" x="0" y="16">1 · CALLS</text>
+    <text class="lane" x="300" y="16">2 · WHERE LOGS COME FROM</text>
+    <text class="lane" x="640" y="16">3 · RAW LOGS</text>
+    <text class="lane" x="900" y="16">4 · ONE JOB</text>
+    <text class="lane" x="1110" y="16">5 · WHO READS IT</text>
+
+    <!-- apps -->
+    <rect class="box" x="0" y="40" width="230" height="180" rx="10"/>
+    <text class="t" x="18" y="70">Your apps and agents</text>
+    <text class="s" x="18" y="96">support-bot · search-rag</text>
+    <text class="s" x="18" y="114">code-review · batch jobs</text>
+    <text class="s" x="18" y="146">Every call carries tags:</text>
+    <text class="m" x="18" y="166">team, feature, env,</text>
+    <text class="m" x="18" y="184">trace_id</text>
+
+    <!-- bedrock -->
+    <rect class="aws" x="300" y="40" width="270" height="180" rx="10"/>
+    <text class="t" x="318" y="70">Amazon Bedrock</text>
+    <text class="s" x="318" y="96">Converse API</text>
+    <text class="s" x="318" y="116">+ Guardrail (trace enabled)</text>
+    <text class="s" x="318" y="136">+ requestMetadata tags</text>
+    <rect x="318" y="156" width="234" height="44" rx="6" fill="#fff" stroke="#eb6834" stroke-dasharray="4 3"/>
+    <text class="s" x="330" y="175">Model invocation logging</text>
+    <text class="s" x="330" y="192">turned on, once per account/region</text>
+
+    <!-- gateway -->
+    <rect class="box" x="300" y="270" width="270" height="130" rx="10"/>
+    <text class="t" x="318" y="300">LLM gateway (optional)</text>
+    <text class="s" x="318" y="326">LiteLLM on ECS / EKS</text>
+    <text class="s" x="318" y="346">Covers non-Bedrock models, adds its</text>
+    <text class="s" x="318" y="364">own guardrail and a log callback</text>
+
+    <!-- raw s3 -->
+    <rect class="store" x="640" y="40" width="200" height="360" rx="10"/>
+    <text class="t" x="658" y="70">S3 · raw</text>
+    <text class="s" x="658" y="96">Gzipped JSON, one</text>
+    <text class="s" x="658" y="114">record per model call</text>
+    <text class="m" x="658" y="148">AWSLogs/&lt;acct&gt;/</text>
+    <text class="m" x="658" y="166"> BedrockModel</text>
+    <text class="m" x="658" y="184"> InvocationLogs/</text>
+    <text class="m" x="658" y="202"> &lt;region&gt;/Y/M/D/H/</text>
+    <text class="m" x="658" y="220"> *.json.gz</text>
+    <line x1="658" y1="250" x2="822" y2="250" stroke="#2a78d6" stroke-dasharray="4 3"/>
+    <text class="m" x="658" y="286">gateway/</text>
+    <text class="m" x="658" y="304"> dt=YYYY-MM-DD/</text>
+    <text class="m" x="658" y="322"> HH.ndjson</text>
+    <text class="s" x="658" y="362">Lifecycle rule: expire</text>
+    <text class="s" x="658" y="380">raw after 30–90 days</text>
+
+    <!-- duckdb -->
+    <rect class="duck" x="900" y="120" width="160" height="200" rx="10"/>
+    <text class="t" x="918" y="152">DuckDB</text>
+    <text class="s" x="918" y="178">Scheduled Lambda</text>
+    <text class="s" x="918" y="196">or ECS task</text>
+    <text class="s" x="918" y="214">(or your laptop)</text>
+    <text class="s" x="918" y="250">flatten · price ·</text>
+    <text class="s" x="918" y="268">unnest guardrail</text>
+    <text class="s" x="918" y="286">trace · write Parquet</text>
+
+    <!-- curated -->
+    <rect class="store" x="900" y="380" width="160" height="130" rx="10"/>
+    <text class="t" x="918" y="410">S3 · curated</text>
+    <text class="s" x="918" y="436">Parquet, zstd</text>
+    <text class="m" x="918" y="460">invocations/dt=…/</text>
+    <text class="m" x="918" y="478">guardrail_events</text>
+
+    <!-- consumers -->
+    <rect class="out" x="1110" y="40" width="210" height="110" rx="10"/>
+    <text class="t" x="1128" y="70">Dashboard</text>
+    <text class="s" x="1128" y="96">Cost, latency, guardrails,</text>
+    <text class="s" x="1128" y="114">traces. Streamlit + DuckDB</text>
+    <rect class="out" x="1110" y="180" width="210" height="110" rx="10"/>
+    <text class="t" x="1128" y="210">Alerts</text>
+    <text class="s" x="1128" y="236">Cost anomaly or attack burst</text>
+    <text class="s" x="1128" y="254">→ SNS → Slack / email</text>
+    <rect class="out" x="1110" y="320" width="210" height="110" rx="10"/>
+    <text class="t" x="1128" y="350">Ad-hoc SQL</text>
+    <text class="s" x="1128" y="376">Anyone with read access</text>
+    <text class="s" x="1128" y="394">queries S3 from a laptop</text>
+
+    <!-- arrows -->
+    <path class="arr" d="M230 110 H298"/>
+    <path class="arr" d="M230 190 C262 190 262 330 298 330"/>
+    <path class="arr dash" d="M435 270 V222"/>
+    <text class="lbl" x="444" y="252">Bedrock models</text>
+    <path class="arr" d="M570 178 H638"/>
+    <path class="arr" d="M570 330 H638"/>
+    <path class="arr" d="M840 220 H898"/>
+    <text class="lbl" x="846" y="210">read</text>
+    <path class="arr" d="M980 320 V378"/>
+    <text class="lbl" x="990" y="354">write</text>
+    <path class="arr" d="M1060 440 C1090 440 1082 95 1108 95"/>
+    <path class="arr" d="M1060 440 C1090 440 1082 235 1108 235"/>
+    <path class="arr" d="M1060 440 C1090 440 1086 375 1108 375"/>
+    <path class="arr dash" d="M1060 200 C1080 200 1086 235 1108 235"/>
+  </svg>
+</div>
+
+<div class="fig" id="model">
+  <h2>One log record becomes three tables</h2>
+  <p class="sub">The fields on the left are what Bedrock writes. The tables on the right are what you query.</p>
+  <svg width="1320" height="470" viewBox="0 0 1320 470">
+    <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#52514e"/></marker></defs>
+    <rect class="aws" x="0" y="10" width="470" height="440" rx="10"/>
+    <text class="t" x="18" y="40">ModelInvocationLog record (JSON)</text>
+    <text class="m" x="18" y="72">timestamp, requestId, region, modelId</text>
+    <text class="m" x="18" y="100">identity.arn</text>
+    <text class="s" x="250" y="100">→ which role and session called</text>
+    <text class="m" x="18" y="128">requestMetadata</text>
+    <text class="s" x="250" y="128">→ your tags: team, trace_id…</text>
+    <text class="m" x="18" y="156">input.inputTokenCount</text>
+    <text class="m" x="18" y="184">output.outputTokenCount</text>
+    <text class="m" x="18" y="218">output.outputBodyJson</text>
+    <text class="m" x="36" y="244">.usage.cacheReadInputTokens</text>
+    <text class="m" x="36" y="268">.usage.cacheWriteInputTokens</text>
+    <text class="m" x="36" y="292">.metrics.latencyMs</text>
+    <text class="m" x="36" y="316">.stopReason</text>
+    <text class="m" x="36" y="346">.trace.guardrail</text>
+    <text class="m" x="54" y="370">.inputAssessment.&lt;guardrailId&gt;</text>
+    <text class="m" x="54" y="394">.outputAssessments.&lt;guardrailId&gt;[]</text>
+    <text class="s" x="18" y="430">input.inputBodyJson (the prompt) is never read.</text>
+
+    <rect class="store" x="620" y="10" width="300" height="150" rx="10"/>
+    <text class="t" x="638" y="40">invocations</text>
+    <text class="s" x="638" y="64">one flat row per model call</text>
+    <text class="m" x="638" y="92">ts, dt, team, feature, trace_id,</text>
+    <text class="m" x="638" y="112">role, session, model_id, tokens,</text>
+    <text class="m" x="638" y="132">cache tokens, latency, stop_reason</text>
+
+    <rect class="box" x="620" y="190" width="300" height="90" rx="10"/>
+    <text class="t" x="638" y="220">prices</text>
+    <text class="s" x="638" y="244">your rates per model,</text>
+    <text class="s" x="638" y="262">with a start date</text>
+
+    <rect class="duck" x="1020" y="90" width="300" height="130" rx="10"/>
+    <text class="t" x="1038" y="120">costed (view)</text>
+    <text class="s" x="1038" y="146">invocations ASOF JOIN prices</text>
+    <text class="m" x="1038" y="174">+ cost_usd</text>
+    <text class="m" x="1038" y="194">+ cache_saved_usd</text>
+
+    <rect class="out" x="620" y="320" width="700" height="130" rx="10"/>
+    <text class="t" x="638" y="350">guardrail_events</text>
+    <text class="s" x="638" y="374">one row per finding, unnested from the trace</text>
+    <text class="m" x="638" y="402">request_id, ts, team, session, side (input|output),</text>
+    <text class="m" x="638" y="422">policy (content_filter|denied_topic|pii|word_filter), finding, action, confidence</text>
+
+    <path d="M470 85 H618" stroke="#52514e" stroke-width="1.6" fill="none" marker-end="url(#b)"/>
+    <path d="M470 370 H618" stroke="#52514e" stroke-width="1.6" fill="none" marker-end="url(#b)"/>
+    <path d="M920 85 C970 85 970 140 1018 140" stroke="#52514e" stroke-width="1.6" fill="none" marker-end="url(#b)"/>
+    <path d="M920 235 C970 235 970 170 1018 170" stroke="#52514e" stroke-width="1.6" fill="none" marker-end="url(#b)"/>
+  </svg>
+</div>

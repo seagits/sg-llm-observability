@@ -1,0 +1,23 @@
+# Throwaway POC gateway (port 4010). Separate from the real gateway on :5000.
+# Two local Ollama models behind gateway aliases. The prices are SHADOW PRICES (example
+# Bedrock-style rates) so cost analytics have something to add up; local inference is free.
+model_list:
+  - model_name: poc-small
+    litellm_params:
+      model: ollama_chat/gemma3:1b
+      api_base: http://127.0.0.1:11434
+    model_info:
+      input_cost_per_token: 0.000001      # $1 / 1M
+      output_cost_per_token: 0.000005     # $5 / 1M
+  - model_name: poc-large
+    litellm_params:
+      model: ollama_chat/qwen3:1.7b
+      api_base: http://127.0.0.1:11434
+    model_info:
+      input_cost_per_token: 0.000003      # $3 / 1M
+      output_cost_per_token: 0.000015     # $15 / 1M
+
+litellm_settings:
+  callbacks: llm_logger.handler
+  drop_params: true
+  num_retries: 0

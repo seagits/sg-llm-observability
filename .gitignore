@@ -1,0 +1,23 @@
+# Everything run.sh and the gateway produce. Users regenerate it locally; none of it is published.
+# data/: synthetic Bedrock logs, curated Parquet, and real gateway logs (prompts + responses).
+data/
+*.duckdb
+*.duckdb.wal
+# out/: query outputs and process logs.
+out/
+screenshots/
+
+# Environments and caches
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+
+# Local secrets, if anyone adds them
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

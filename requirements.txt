@@ -1,0 +1,8 @@
+duckdb
+duckdb-cli
+pandas
+streamlit
+plotly
+# Live gateway tab only:
+# litellm[proxy]
+# httpx
